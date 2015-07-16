@@ -17,7 +17,9 @@ defmodule Exmor.Mixfile do
     [applications:  [
                       :logger,
                       :silverb,
-                      :tinca
+                      :tinca,
+                      :hashex,
+                      :jazz
                     ],
      mod: {Exmor, []}]
   end
@@ -34,7 +36,9 @@ defmodule Exmor.Mixfile do
   defp deps do
     [
       {:silverb, github: "timCF/silverb"},
-      {:tinca, github: "timCF/tinca"}
+      {:tinca, github: "timCF/tinca"},
+      {:hashex, github: "timCF/hashex"},
+      {:jazz, github: "meh/jazz"}
     ]
   end
 end
