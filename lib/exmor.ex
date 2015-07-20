@@ -1,8 +1,12 @@
 defmodule Exmor do
   use Application
-  use Silverb
+  use Silverb,  [
+                  {"@escape_reg", [~r/(\\*")/ , ~r/(\\+)$/]},
+                  {"@escape_sym", "\\"}
+                ]
   use Tinca, [:__exmor__]
   use Hashex, [Exmor.Parsed]
+  use Logex, [ttl: 100]
 
   defmodule Parsed do
     defstruct ok: [],
@@ -15,7 +19,7 @@ defmodule Exmor do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
     Tinca.declare_namespaces
-    IO.puts "#{__MODULE__} : use pymor release '#{get_pymor_release}'"
+    notice("use pymor release '#{get_pymor_release}'")
     get_pred
 
     children = [
@@ -32,7 +36,7 @@ defmodule Exmor do
   defp get_pymor_release do
     case Tinca.get(:pymor_release) do
       bin when is_binary(bin) -> bin
-      nil ->  IO.puts "#{__MODULE__} : trying to recognize your OS ... "
+      nil ->  notice("trying to recognize your OS ... ")
               case :application.get_env(:exmor, :os, nil) do
                 bin when (bin in ["linux","mac"]) -> Tinca.put(bin, :pymor_release)
                 nil -> get_pymor_release_proc
@@ -87,7 +91,7 @@ defmodule Exmor do
   end
 
   defp eval_proc(todo, res = %Exmor.Parsed{}) do
-    case '#{get_pymor_release} #{Stream.map(todo, &("\"#{&1}\"")) |> Enum.join(" ")}' |> :os.cmd |> to_string |> Jazz.decode do
+    case '#{get_pymor_release} #{Stream.map(todo, &("\"#{escape(&1)}\"")) |> Enum.join(" ")}' |> :os.cmd |> to_string |> Jazz.decode do
       {:ok, lst = [_|_]} -> 
         case Enum.all?(lst, &is_binary/1) do
           true -> HashUtils.set(res, :ok, lst)
@@ -97,5 +101,7 @@ defmodule Exmor do
         HashUtils.modify(res, :error, &([error|&1])) |> HashUtils.set(:info, "#{__MODULE__} unexpected result from pymor")
     end
   end
+  
+  defp escape(bin), do: Enum.reduce(@escape_reg, bin, fn(reg, acc) -> Exutils.Reg.escape(acc, reg, @escape_sym) end)
 
 end

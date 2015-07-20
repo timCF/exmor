@@ -19,7 +19,9 @@ defmodule Exmor.Mixfile do
                       :silverb,
                       :tinca,
                       :hashex,
-                      :jazz
+                      :jazz,
+                      :logex,
+                      :exutils
                     ],
      mod: {Exmor, []}]
   end
@@ -38,7 +40,9 @@ defmodule Exmor.Mixfile do
       {:silverb, github: "timCF/silverb"},
       {:tinca, github: "timCF/tinca"},
       {:hashex, github: "timCF/hashex"},
-      {:jazz, github: "meh/jazz"}
+      {:jazz, github: "meh/jazz"},
+      {:logex, github: "timCF/logex"},
+      {:exutils, github: "timCF/exutils"}
     ]
   end
 end
