@@ -11,7 +11,7 @@ defmodule Exmor do
   defmodule Parsed do
     defstruct ok: [],
               error: [],
-              info: "" 
+              info: ""
   end
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
@@ -75,11 +75,11 @@ defmodule Exmor do
   def eval(lst = [_|_]) do
     case Enum.all?(lst, &is_binary/1) do
       false -> %Exmor.Parsed{error: lst, info: "#{__MODULE__} : only binaries are supported"}
-      true -> 
+      true ->
         pred = get_pred
-        case  Enum.map(lst, &(String.split(&1," "))) 
-              |> List.flatten 
-              |> Stream.filter(&(&1 != "")) 
+        case  Enum.map(lst, &(String.split(&1," ")))
+              |> List.flatten
+              |> Stream.filter(&(&1 != ""))
               |> Stream.uniq
               |> Enum.group_by(pred) do
           %{true: todo, false: denied} -> eval_proc(todo, %Exmor.Parsed{error: denied, info: "#{__MODULE__} denied some binaries"})
@@ -91,17 +91,19 @@ defmodule Exmor do
   end
 
   defp eval_proc(todo, res = %Exmor.Parsed{}) do
-    case '#{get_pymor_release} #{Stream.map(todo, &("\"#{escape(&1)}\"")) |> Enum.join(" ")}' |> :os.cmd |> to_string |> Jazz.decode do
-      {:ok, lst = [_|_]} -> 
+    this_cmd = '#{get_pymor_release} #{Stream.map(todo, &("\"#{escape(&1)}\"")) |> Enum.join(" ")}'
+    this_result = this_cmd |> :os.cmd |> to_string
+    case this_result |> Jazz.decode do
+      {:ok, lst = [_|_]} ->
         case Enum.all?(lst, &is_binary/1) do
           true -> HashUtils.set(res, :ok, lst)
-          false -> HashUtils.modify(res, :error, &(&1++lst)) |> HashUtils.set(:info, "#{__MODULE__} unexpected result from pymor")
+          false -> HashUtils.modify(res, :error, &(&1++lst)) |> HashUtils.set(:info, "#{__MODULE__} unexpected result from pymor #{inspect lst} CMD #{this_cmd} RESULT #{this_result}")
         end
       error ->
-        HashUtils.modify(res, :error, &([error|&1])) |> HashUtils.set(:info, "#{__MODULE__} unexpected result from pymor")
+        HashUtils.modify(res, :error, &([error|&1])) |> HashUtils.set(:info, "#{__MODULE__} unexpected ERROR from pymor #{inspect error} CMD #{this_cmd} RESULT #{this_result}")
     end
   end
-  
+
   defp escape(bin), do: Enum.reduce(@escape_reg, bin, fn(reg, acc) -> Exutils.Reg.escape(acc, reg, @escape_sym) end)
 
 end
